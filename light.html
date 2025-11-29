@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ライト画面</title>
+<style>
+  body{margin:0;}
+  .light-container{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+    width:100vw;
+    height:100vh;
+  }
+  .light-box{
+    width:100%;
+    height:100%;
+    background:black;
+    transition: background 0.05s linear;
+  }
+</style>
+</head>
+<body>
+<div class="light-container">
+  <div id="set1" class="light-box"></div>
+  <div id="set2" class="light-box"></div>
+  <div id="set3" class="light-box"></div>
+  <div id="set4" class="light-box"></div>
+</div>
+<script>
+[1,2,3,4].forEach(setNum=>{
+  const channel=new BroadcastChannel('dmx-control-set'+setNum);
+  const box=document.getElementById('set'+setNum);
+  let rgb={r:0,g:0,b:0}, brightness=100, blinkSpeed=0, phase=0;
+
+  channel.onmessage=e=>{
+    const {ch,value}=e.data;
+    if(ch%5===1) rgb.r=Math.floor(255*value/100);
+    if(ch%5===2) rgb.g=Math.floor(255*value/100);
+    if(ch%5===3) rgb.b=Math.floor(255*value/100);
+    if(ch%5===4) brightness=value;
+    if(ch%5===0) blinkSpeed=value;
+  };
+
+  function updateLight(){
+    let blinkFactor=1;
+    if(blinkSpeed>0){ blinkFactor=(Math.sin(phase)+1)/2; phase+=0.1*(blinkSpeed/10); }
+    let r=Math.floor(rgb.r*(brightness/100)*blinkFactor);
+    let g=Math.floor(rgb.g*(brightness/100)*blinkFactor);
+    let b=Math.floor(rgb.b*(brightness/100)*blinkFactor);
+    box.style.background=`rgb(${r},${g},${b})`;
+    requestAnimationFrame(updateLight);
+  }
+  updateLight();
+});
+</script>
+</body>
+</html>
